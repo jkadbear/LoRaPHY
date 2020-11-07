@@ -375,8 +375,22 @@ classdef LoRaPHY < handle
             slen = double(8 + max((4+self.cr)*ceil(double((2*plen-self.sf+7+4*self.crc-5*self.ih))/double(self.sf-2*self.ldr)), 0));
         end
 
-        function plen = calc_payload_len(self, slen)
-            plen = floor( (self.sf-2)/2 + (self.sf-self.ldr*2)/2 * ceil((slen-8)/(self.cr+4)) );
+        function plen = calc_payload_len(self, slen, no_redundant_bytes)
+            if nargin < 3
+                no_redundant_bytes = false;
+            end
+            % plen_float possibly has fractional part 0.5, which means
+            % there would be 0.5 uncontrollable redundant byte in a packet.
+            % The 0.5 byte results in unexpected symbols when called by
+            % function `symbols_to_bytes`. To make all specified symbols
+            % controllable, we use `ceil` instead of `floor` when
+            % no_redundant_bytes is true.
+            plen_float = (self.sf-2)/2 - 2.5*(1-self.ih) + (self.sf-self.ldr*2)/2 * ceil((slen-8)/(self.cr+4));
+            if no_redundant_bytes
+                plen = ceil( plen_float );
+            else
+                plen = floor( plen_float );
+            end
         end
 
         function dout = sync(self, x)
@@ -561,41 +575,63 @@ classdef LoRaPHY < handle
                         pf = 0;
                 end
             end
-            switch rdd
-                % TODO report parity error
-                case {5, 6}
-                    nibbles = mod(codewords, 16);
-                case {7, 8}
-                    if self.hamming_decoding_en
+            if self.hamming_decoding_en
+                switch rdd
+                    % TODO report parity error
+                    case {5, 6}
+                        nibbles = mod(codewords, 16);
+                    case {7, 8}
                         parity = p2*4+p3*2+p5;
                         pf = arrayfun(@parity_fix, parity);
                         codewords = bitxor(codewords, uint16(pf));
-                    end
-                    nibbles = mod(codewords, 16);
-                otherwise
-                    % THIS CASE SHOULD NOT HAPPEN
-                    error('Invalid Code Rate!');
+                        nibbles = mod(codewords, 16);
+                    otherwise
+                        % THIS CASE SHOULD NOT HAPPEN
+                        error('Invalid Code Rate!');
+                end
+            else
+                nibbles = mod(codewords, 16);
             end
             self.print_bin("Hamming Decode", codewords);
         end
 
         function bytes = symbols_to_bytes(self, symbols)
             symbols = reshape(symbols, [length(symbols), 1]);
-            symbols_ = [];
-            for ii = 1:4:length(symbols)
-                if ii == 1
-                    symbols_ = [symbols_; symbols(ii:ii+3); zeros(4, 1)];
-                elseif ii+3 <= length(symbols)
-                    symbols_ = [symbols_; symbols(ii:ii+3); zeros(self.cr, 1)];
-                else
-                    symbols_ = [symbols_; symbols(ii:end); zeros(self.cr+ii+3-length(symbols), 1)];
-                end
-            end
             self.init();
             self.hamming_decoding_en = false;
             payload_len_ = self.payload_len;
-            self.payload_len = self.calc_payload_len(length(symbols_));
+
+            if length(symbols) <= 4
+                slen_tmp = 8 + (1-self.ih)*(self.cr+4);
+            else
+                slen_tmp = 8 + ceil((length(symbols)-4*self.ih)/4) * (self.cr+4);
+            end
+            self.payload_len = self.calc_payload_len(slen_tmp, true);
+            symbols_ = zeros(self.calc_sym_len(self.payload_len), 1);
+            if self.ih
+                jj = 1;
+            else
+                jj = 9;
+            end
+            for ii = 1:4:length(symbols)
+                if ii+3 <= length(symbols)
+                    symbols_(jj:jj+3) = symbols(ii:ii+3);
+                else
+                    symbols_(jj:jj+3) = [symbols(ii:end); zeros(self.cr+ii+3-length(symbols), 1)];
+                end
+                if jj == 1
+                    jj = 9;
+                else
+                    jj = jj + self.cr + 4;
+                end
+            end
+            if ~self.ih
+                % construct header
+                symbols_tmp = self.encode(zeros(self.payload_len, 1));
+                symbols_(1:8) = symbols_tmp(1:8);
+            end
             bytes = self.decode(symbols_);
+
             self.hamming_decoding_en = true;
             self.payload_len = payload_len_;
         end
