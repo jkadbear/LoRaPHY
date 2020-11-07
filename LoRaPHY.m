@@ -630,7 +630,10 @@ classdef LoRaPHY < handle
                 symbols_tmp = self.encode(zeros(self.payload_len, 1));
                 symbols_(1:8) = symbols_tmp(1:8);
             end
-            bytes = self.decode(symbols_);
+            [bytes, ~] = self.decode(symbols_);
+            if self.crc
+                bytes = bytes(1:end-2);
+            end
 
             self.hamming_decoding_en = true;
             self.payload_len = payload_len_;
