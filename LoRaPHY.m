@@ -55,6 +55,7 @@ classdef LoRaPHY < handle
             self.sf = sf;
             self.bw = bw;
             self.fs = fs;
+            self.ih = 0;
             self.crc = 1;
             self.is_debug = false;
             self.hamming_decoding_en = true;
@@ -134,7 +135,7 @@ classdef LoRaPHY < handle
                     if bin_diff > self.bin_num/2
                         bin_diff = self.bin_num - bin_diff;
                     end
-                    if bin_diff <= 1
+                    if bin_diff <= self.zero_padding_ratio
                         pk_bin_list = [pk_bin_list; pk0(2)];
                     else
                         pk_bin_list = pk0(2);
@@ -174,8 +175,8 @@ classdef LoRaPHY < handle
                     symbols = [symbols; mod((pk(2)+self.bin_num-self.preamble_bin)/self.zero_padding_ratio, 2^self.sf)];
                 end
                 if ~self.ih
-                    ok = self.parse_header(round(symbols));
-                    if ~ok
+                    is_valid = self.parse_header(round(symbols));
+                    if ~is_valid
                         x = x + 7*self.sample_num;
                         continue;
                     end
@@ -196,7 +197,7 @@ classdef LoRaPHY < handle
                 else
                     pkt_cfo = self.preamble_bin*self.bw/self.bin_num;
                 end
-                symbols_m = [symbols_m symbols];
+                symbols_m = [symbols_m mod(round(symbols),2^self.sf)];
                 cfo_m = [cfo_m pkt_cfo];
             end
 
@@ -205,7 +206,7 @@ classdef LoRaPHY < handle
             end
         end
 
-        function ok = parse_header(self, din)
+        function is_valid = parse_header(self, din)
             % compensate bin drift in Low Data Rate Mode
             symbols = self.dynamic_compensation(din);
 
@@ -226,9 +227,9 @@ classdef LoRaPHY < handle
             header_checksum_calc = self.header_checksum_matrix * gf(reshape(de2bi(nibbles(1:3), 4, 'left-msb')', [], 1));
             if any(header_checksum ~= header_checksum_calc)
                 warning('Invalid header checksum!');
-                ok = 0;
+                is_valid = 0;
             else
-                ok = 1;
+                is_valid = 1;
             end
         end
 
