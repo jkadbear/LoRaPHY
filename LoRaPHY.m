@@ -15,7 +15,7 @@ classdef LoRaPHY < handle
     % bw = 125e3;
     % fs = 1e6;
     % phy = LoRaPHY(sf, bw, fs);
-    % phy.ih = 0; % explicit header mode
+    % phy.has_header = 1; % explicit header mode
     % symbols = [2541,1153,673,2397,1189,3509,41,3089,3237,3917,2729,2765,1417,2833,1389,801,3197,345,961,745,3101,297,1893,469];
     % [data, checksum] = phy.decode(symbols);
     % disp(data); % CODE: 09 90 40 01 02 03 04 05 06 07 08 09 BA 2E
@@ -27,7 +27,7 @@ classdef LoRaPHY < handle
         fs                        % sampling frequency
         cr                        % code rate: (1:4/5 2:4/5 3:4/7 4:4/8)
         payload_len               % payload length
-        ih                        % implicit header: 1, explicit header: 0
+        has_header                % explicit header: 1, implicit header: 0
         crc                       % crc = 1 if CRC Check is enabled else 0
         ldr                       % ldr = 1 if Low Data Rate Optimization is enabled else 0
         whitening_seq             % whitening sequence
@@ -55,7 +55,7 @@ classdef LoRaPHY < handle
             self.sf = sf;
             self.bw = bw;
             self.fs = fs;
-            self.ih = 0;
+            self.has_header = 1;
             self.crc = 1;
             self.is_debug = false;
             self.hamming_decoding_en = true;
@@ -174,7 +174,7 @@ classdef LoRaPHY < handle
                     pk = self.dechirp(x+ii*self.sample_num);
                     symbols = [symbols; mod((pk(2)+self.bin_num-self.preamble_bin)/self.zero_padding_ratio, 2^self.sf)];
                 end
-                if ~self.ih
+                if self.has_header
                     is_valid = self.parse_header(round(symbols));
                     if ~is_valid
                         x = x + 7*self.sample_num;
@@ -183,7 +183,7 @@ classdef LoRaPHY < handle
                 end
 
                 % symbol number of the packet
-                sym_num = self.calc_sym_len(self.payload_len);
+                sym_num = self.calc_sym_num(self.payload_len);
 
                 % demodulate the rest LoRa data symbols
                 for ii = 8:sym_num-1
@@ -249,23 +249,18 @@ classdef LoRaPHY < handle
         end
 
         function symbols = encode(self, payload)
-            if ~self.ih
-                header_nibbles = self.gen_header(payload);
-            else
-                header_nibbles = [];
-            end
             if self.crc
                 data = uint8([payload; self.calc_crc(payload)]);
             else
                 data = uint8(payload);
             end
 
-            len = length(payload);
-            sym_num = self.calc_sym_len(len);
+            plen = length(payload);
+            sym_num = self.calc_sym_num(plen);
             % filling all symbols needs nibble_num nibbles
             nibble_num = self.sf - 2 + (sym_num-8)/(self.cr+4)*(self.sf-2*self.ldr);
             data_w = uint8([data; zeros(ceil((nibble_num-2*length(data))/2), 1)]);
-            data_w(1:len) = self.whiten(data_w(1:len));
+            data_w(1:plen) = self.whiten(data_w(1:plen));
             data_nibbles = uint8(zeros(nibble_num, 1));
             for i = 1:nibble_num
                 idx = ceil(i/2);
@@ -276,6 +271,11 @@ classdef LoRaPHY < handle
                 end
             end
 
+            if self.has_header
+                header_nibbles = self.gen_header(plen);
+            else
+                header_nibbles = [];
+            end
             codewords = self.hamming_encode([header_nibbles; data_nibbles]);
 
             % interleave
@@ -290,10 +290,10 @@ classdef LoRaPHY < handle
             symbols = self.gray_decoding(symbols_i);
         end
 
-        function header_nibbles = gen_header(self, din)
+        function header_nibbles = gen_header(self, plen)
             header_nibbles = zeros(5, 1);
-            header_nibbles(1) = bitshift(length(din), -4);
-            header_nibbles(2) = bitand(length(din), 15);
+            header_nibbles(1) = bitshift(plen, -4);
+            header_nibbles(2) = bitand(plen, 15);
             header_nibbles(3) = bitor(2*self.cr, self.crc);
             header_checksum = self.header_checksum_matrix * gf(reshape(de2bi(header_nibbles(1:3), 4, 'left-msb')', [], 1));
             header_nibbles(4) = header_checksum.x(1);
@@ -372,8 +372,8 @@ classdef LoRaPHY < handle
             end
         end
 
-        function slen = calc_sym_len(self, plen)
-            slen = double(8 + max((4+self.cr)*ceil(double((2*plen-self.sf+7+4*self.crc-5*self.ih))/double(self.sf-2*self.ldr)), 0));
+        function sym_num = calc_sym_num(self, plen)
+            sym_num = double(8 + max((4+self.cr)*ceil(double((2*plen-self.sf+7+4*self.crc-5*(1-self.has_header)))/double(self.sf-2*self.ldr)), 0));
         end
 
         function plen = calc_payload_len(self, slen, no_redundant_bytes)
@@ -386,7 +386,7 @@ classdef LoRaPHY < handle
             % function `symbols_to_bytes`. To make all specified symbols
             % controllable, we use `ceil` instead of `floor` when
             % no_redundant_bytes is true.
-            plen_float = (self.sf-2)/2 - 2.5*(1-self.ih) + (self.sf-self.ldr*2)/2 * ceil((slen-8)/(self.cr+4));
+            plen_float = (self.sf-2)/2 - 2.5*self.has_header + (self.sf-self.ldr*2)/2 * ceil((slen-8)/(self.cr+4));
             if no_redundant_bytes
                 plen = ceil( plen_float );
             else
@@ -462,7 +462,7 @@ classdef LoRaPHY < handle
 
                 % deinterleave
                 codewords = self.diag_deinterleave(symbols_g(1:8), self.sf-2);
-                if self.ih
+                if ~self.has_header
                     nibbles = self.hamming_decode(codewords, 8);
                 else
                     % parse header
@@ -603,16 +603,16 @@ classdef LoRaPHY < handle
             payload_len_ = self.payload_len;
 
             if length(symbols) <= 4
-                slen_tmp = 8 + (1-self.ih)*(self.cr+4);
+                slen_tmp = 8 + self.has_header*(self.cr+4);
             else
-                slen_tmp = 8 + ceil((length(symbols)-4*self.ih)/4) * (self.cr+4);
+                slen_tmp = 8 + ceil((length(symbols)-4*(1-self.has_header))/4) * (self.cr+4);
             end
             self.payload_len = self.calc_payload_len(slen_tmp, true);
-            symbols_ = zeros(self.calc_sym_len(self.payload_len), 1);
-            if self.ih
-                jj = 1;
-            else
+            symbols_ = zeros(self.calc_sym_num(self.payload_len), 1);
+            if self.has_header
                 jj = 9;
+            else
+                jj = 1;
             end
             for ii = 1:4:length(symbols)
                 if ii+3 <= length(symbols)
@@ -626,7 +626,7 @@ classdef LoRaPHY < handle
                     jj = jj + self.cr + 4;
                 end
             end
-            if ~self.ih
+            if self.has_header
                 % construct header
                 symbols_tmp = self.encode(zeros(self.payload_len, 1));
                 symbols_(1:8) = symbols_tmp(1:8);
