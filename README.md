@@ -45,6 +45,8 @@ phy.cr = 1;                 % code rate = 4/8 (1:4/5 2:4/6 3:4/7 4:4/8)
 phy.crc = 0;                % enable payload CRC checksum
 phy.preamble_len = 8;       % preamble: 8 basic upchirps
 
+% The first 8 data symbols always have form `4n+1` and are encoded with
+% code rate = 4/8
 d1 = phy.symbols_to_bytes(ones(9,1));
 fprintf("bytes d1:\n");
 disp(d1);

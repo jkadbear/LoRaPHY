@@ -618,7 +618,7 @@ classdef LoRaPHY < handle
                 if ii+3 <= length(symbols)
                     symbols_(jj:jj+3) = symbols(ii:ii+3);
                 else
-                    symbols_(jj:jj+3) = [symbols(ii:end); zeros(self.cr+ii+3-length(symbols), 1)];
+                    symbols_(jj:jj+3) = [symbols(ii:end); zeros(ii-length(symbols)+3, 1)];
                 end
                 if jj == 1
                     jj = 9;
