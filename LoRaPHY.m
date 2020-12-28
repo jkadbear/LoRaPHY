@@ -296,9 +296,10 @@ classdef LoRaPHY < handle
             header_nibbles(2) = bitand(plen, 15);
             header_nibbles(3) = bitor(2*self.cr, self.crc);
             header_checksum = self.header_checksum_matrix * gf(reshape(de2bi(header_nibbles(1:3), 4, 'left-msb')', [], 1));
-            header_nibbles(4) = header_checksum.x(1);
+            x = header_checksum.x;
+            header_nibbles(4) = x(1);
             for i = 1:4
-                header_nibbles(5) = bitor(header_nibbles(5), header_checksum.x(i+1)*2^(4-i));
+                header_nibbles(5) = bitor(header_nibbles(5), x(i+1)*2^(4-i));
             end
         end
 
