@@ -176,7 +176,7 @@ classdef LoRaPHY < handle
                     symbols = [symbols; mod((pk(2)+self.bin_num-self.preamble_bin)/self.zero_padding_ratio, 2^self.sf)];
                 end
                 if self.has_header
-                    is_valid = self.parse_header(round(symbols));
+                    is_valid = self.parse_header(symbols);
                     if ~is_valid
                         x = x + 7*self.sample_num;
                         continue;
@@ -514,26 +514,23 @@ classdef LoRaPHY < handle
         function symbols = dynamic_compensation(self, din)
             symbols = zeros(length(din), 1);
             bin_offset = 0;
+            v_last = 1;
             
             if self.ldr
-                mod_base = 4;
+                modulus = 4;
             else
-                mod_base = 1;
+                modulus = 1;
             end
             
             for i = 1:length(din)
                 v = din(i);
-                if i == 1
-                    last_rem = mod(v, mod_base);
-                end
-                this_rem = mod(v, mod_base);
-                dis = mod(this_rem-last_rem, mod_base);
-                if dis < mod_base / 2
-                    bin_offset = bin_offset - dis;
+                bin_drift = mod(v-v_last, modulus);
+                if bin_drift < modulus / 2
+                    bin_offset = bin_offset - bin_drift;
                 else
-                    bin_offset = bin_offset - dis + mod_base;
+                    bin_offset = bin_offset - bin_drift + modulus;
                 end
-                last_rem = this_rem;
+                v_last = v;
                 symbols(i) = mod(v+bin_offset, 2^self.sf);
             end
         end
