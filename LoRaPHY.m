@@ -22,6 +22,7 @@ classdef LoRaPHY < handle
     % disp(checksum);
 
     properties
+        rf_freq                   % carrier frequency
         sf                        % spreading factor (7-12)
         bw                        % bandwidth (125kHz 250kHz 500kHz)
         fs                        % sampling frequency
@@ -50,8 +51,9 @@ classdef LoRaPHY < handle
     end
 
     methods
-        function self = LoRaPHY(sf, bw, fs)
+        function self = LoRaPHY(rf_freq, sf, bw, fs)
             %LORAPHY Construct an instance of this class
+            self.rf_freq = rf_freq;
             self.sf = sf;
             self.bw = bw;
             self.fs = fs;
@@ -170,6 +172,9 @@ classdef LoRaPHY < handle
                 % header is in the first 8 symbols
                 symbols = [];
                 pk_list = [];
+                if x > length(self.sig) - 8*self.sample_num + 1
+                    return;
+                end
                 for ii = 0:7
                     pk = self.dechirp(x+ii*self.sample_num);
                     pk_list = [pk_list; pk];
@@ -187,24 +192,21 @@ classdef LoRaPHY < handle
                 sym_num = self.calc_sym_num(self.payload_len);
 
                 % demodulate the rest LoRa data symbols
+                if x > length(self.sig) - sym_num*self.sample_num + 1
+                    return;
+                end
                 for ii = 8:sym_num-1
                     pk = self.dechirp(x+ii*self.sample_num);
                     pk_list = [pk_list; pk];
                     symbols = [symbols; mod((pk(2)+self.bin_num-self.preamble_bin)/self.zero_padding_ratio, 2^self.sf)];
                 end
                 x = x + sym_num*self.sample_num;
-
-                if self.preamble_bin > self.bin_num / 2
-                    pkt_cfo = (self.preamble_bin-self.bin_num)*self.bw/self.bin_num;
-                else
-                    pkt_cfo = self.preamble_bin*self.bw/self.bin_num;
-                end
                 
                 % compensate CFO drift
                 symbols = self.dynamic_compensation(symbols);
 
                 symbols_m = [symbols_m mod(round(symbols),2^self.sf)];
-                cfo_m = [cfo_m pkt_cfo];
+                cfo_m = [cfo_m self.cfo];
             end
 
             if isempty(symbols_m)
@@ -441,6 +443,12 @@ classdef LoRaPHY < handle
             % set preamble reference bin for CFO elimination
             pku = self.dechirp(x - 4*self.sample_num);
             self.preamble_bin = pku(2);
+            
+            if self.preamble_bin > self.bin_num / 2
+                self.cfo = (self.preamble_bin-self.bin_num)*self.bw/self.bin_num;
+            else
+                self.cfo = self.preamble_bin*self.bw/self.bin_num;
+            end
 
             % set x to the start of data symbols
             pku = self.dechirp(x-self.sample_num);
@@ -512,26 +520,25 @@ classdef LoRaPHY < handle
         end
 
         function symbols = dynamic_compensation(self, din)
-            symbols = zeros(length(din), 1);
-            bin_offset = 0;
-            v_last = 1;
-            
+            % compensate the bin drift caused by Sampling Frequency Offset (SFO)
+            sfo_drift = (1 + (1:length(din))') * 2^self.sf * self.cfo / self.rf_freq;
+            symbols = mod(din - sfo_drift, 2^self.sf);
+
             if self.ldr
-                modulus = 4;
-            else
-                modulus = 1;
-            end
-            
-            for i = 1:length(din)
-                v = din(i);
-                bin_drift = mod(v-v_last, modulus);
-                if bin_drift < modulus / 2
-                    bin_offset = bin_offset - bin_drift;
-                else
-                    bin_offset = bin_offset - bin_drift + modulus;
+                bin_offset = 0;
+                v_last = 1;
+
+                for i = 1:length(symbols)
+                    v = symbols(i);
+                    bin_delta = mod(v-v_last, 4);
+                    if bin_delta < 2
+                        bin_offset = bin_offset - bin_delta;
+                    else
+                        bin_offset = bin_offset - bin_delta + 4;
+                    end
+                    v_last = v;
+                    symbols(i) = mod(v+bin_offset, 2^self.sf);
                 end
-                v_last = v;
-                symbols(i) = mod(v+bin_offset, 2^self.sf);
             end
         end
 
@@ -719,7 +726,10 @@ classdef LoRaPHY < handle
             end
         end
 
-        function y = chirp(isup, sf, bw, fs, h, cfo, tdelta)
+        function y = chirp(isup, sf, bw, fs, h, cfo, tdelta, tscale)
+            if nargin < 8
+                tscale = 1;
+            end
             if nargin < 7
                 tdelta = 0;
             end
@@ -741,7 +751,7 @@ classdef LoRaPHY < handle
             end
 
             % retain last element to calculate phase
-            t = (0:samp_per_sym*(N-h)/N)/fs + tdelta;
+            t = (0:samp_per_sym*(N-h)/N)/fs*tscale + tdelta;
             snum = length(t);
             c1 = exp(1j*2*pi*(t.*(f0+k*T*h/N+0.5*k*t)));
 
