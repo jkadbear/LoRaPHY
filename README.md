@@ -1,7 +1,36 @@
 # LoRaPHY
 
+**LoRaPHY** is a complete MATLAB implementation of [LoRa](https://en.wikipedia.org/wiki/LoRa) physical layer, including baseband modulation, baseband demodulation, encoding and decoding.
+**LoRaPHY** is organized as a single file `LoRaPHY.m` for ease of use (copy it and run everywhere).
+
+## Components
+
+- LoRa Modulator
+- LoRa Demodulator
+- LoRa Encoder
+- LoRa Decoder
+
+## Supported features
+
+- Extremely low SNR demodulation (**-20 dB**)
+- Clock drift correction
+- All spreading factors (SF = 7,8,9,10,11,12)
+- All code rates (CR = 4/5,4/6,4/7,4/8)
+- Explicit/Implicit PHY header mode
+- PHY header/payload CRC check
+- Low Data Rate Optimization (LDRO)
+
+## Usage
+
+Git clone this repo or just download `LoRaPHY.m`.
+Put your MATLAB script, e.g., `test.m`, in the same directory of `LoRaPHY.m`.
+Below is an example showing how to generate a valid baseband LoRa signal and then extract the data with the decoder.
+See more examples in directory [examples](./examples).
+
 ```matlab
-rf_freq = 470e6;    % carrier frequency
+% test.m
+
+rf_freq = 470e6;    % carrier frequency, used to correct clock drift
 sf = 7;             % spreading factor
 bw = 125e3;         % bandwidth
 fs = 1e6;           % sampling rate
@@ -33,31 +62,14 @@ fprintf("[decode] checksum:\n");
 disp(checksum);
 ```
 
-### Generating a LoRa packet with specified symbols
+## TODO
 
-```matlab
-rf_freq = 470e6;    % carrier frequency
-sf = 8;             % spreading factor
-bw = 125e3;         % bandwidth
-fs = 1e6;           % sampling rate
+- Decoding multiple channels simultaneously
 
-phy = LoRaPHY(rf_freq, sf, bw, fs);
-phy.has_header = 1;         % explicit header mode
-phy.cr = 1;                 % code rate = 4/5 (1:4/5 2:4/6 3:4/7 4:4/8)
-phy.crc = 0;                % enable payload CRC checksum
-phy.preamble_len = 8;       % preamble: 8 basic upchirps
+## References
 
-% The first 8 data symbols always have form `4n+1` and are encoded with
-% code rate = 4/8
-d1 = phy.symbols_to_bytes(ones(9,1));
-fprintf("bytes d1:\n");
-disp(d1);
-fprintf("symbols:\n");
-disp(phy.encode(d1));
-d2 = phy.symbols_to_bytes([1 5 9 13 1 2 3 4 5 6 7 8]');
-fprintf("bytes d2:\n");
-disp(d2);
-fprintf("symbols:\n");
-disp(phy.encode(d2));
-```
-
+1. Zhenqiang Xu, Pengjin Xie, Jiliang Wang. Pyramid: Real-Time LoRa Collision Decoding with Peak Tracking. In Proceedings of IEEE INFOCOM. 2021.
+2. Zhenqiang Xu, Shuai Tong, Pengjin Xie, Jiliang Wang. FlipLoRa: Resolving Collisions with Up-Down Quasi-Orthogonality. In Proceedings of IEEE SECON. 2020: 1-9.
+3. Shuai Tong, Zhenqiang Xu, Jiliang Wang. CoLoRa: Enabling Multi-Packet Reception in LoRa. In Proceedings of IEEE INFOCOM. 2020: 2303-2311.
+4. Shuai Tong, Jiliang Wang, Yunhao Liu. Combating packet collisions using non-stationary signal scaling in LPWANs. In Proceedings of Proceedings of ACM MobiSys. 2020: 234-246.
+5. Yinghui Li, Jing Yang, Jiliang Wang. DyLoRa: Towards Energy Efficient Dynamic LoRa Transmission Control. In Proceedings of IEEE INFOCOM. 2020: 2312-2320.
