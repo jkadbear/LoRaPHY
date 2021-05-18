@@ -100,9 +100,9 @@ classdef LoRaPHY < handle
             self.downchirp = LoRaPHY.chirp(false, self.sf, self.bw, 2*self.bw, 0, self.cfo, 0);
             self.upchirp = LoRaPHY.chirp(true, self.sf, self.bw, 2*self.bw, 0, self.cfo, 0);
 
-            % if the chirp peird is larger than 16ms
-            % the least significant two bits are considered unreliable and
-            % are neglected
+            % Low Data Rate Optimization (LDRO) mode in LoRa
+            % If the chirp peird is larger than 16ms, the least significant
+            % two bits are considered unreliable and are neglected.
             if 2^(self.sf)/self.bw > 16e-3
                 self.ldr = 1;
             else
@@ -268,7 +268,7 @@ classdef LoRaPHY < handle
             sym_num = self.calc_sym_num(plen);
             % filling all symbols needs nibble_num nibbles
             nibble_num = self.sf - 2 + (sym_num-8)/(self.cr+4)*(self.sf-2*self.ldr);
-            data_w = uint8([data; zeros(ceil((nibble_num-2*length(data))/2), 1)]);
+            data_w = uint8([data; 255*ones(ceil((nibble_num-2*length(data))/2), 1)]);
             data_w(1:plen) = self.whiten(data_w(1:plen));
             data_nibbles = uint8(zeros(nibble_num, 1));
             for i = 1:nibble_num
@@ -785,6 +785,68 @@ classdef LoRaPHY < handle
             xlabel('Time');
             ylabel('Frequency');
             set(gcf,'unit','normalized','position',[0.05,0.2,0.9,0.1]);
+        end
+        
+        % Method `read` and `write` are copied from
+        % https://github.com/gnuradio/gnuradio/blob/master/gr-utils/octave/read_complex_binary.m
+        % https://github.com/gnuradio/gnuradio/blob/master/gr-utils/octave/write_complex_binary.m
+        function v = read(filename, count)
+
+            % usage: read(filename, [count])
+            %
+            %  open filename and return the contents as a column vector,
+            %  treating them as 32 bit complex numbers
+            %
+
+            m = nargchk (1,2,nargin);
+            if (m)
+            usage (m);
+            end
+
+            if (nargin < 2)
+            count = Inf;
+            end
+
+            f = fopen (filename, 'rb');
+            if (f < 0)
+            v = 0;
+            else
+            t = fread (f, [2, count], 'float');
+            fclose (f);
+            v = t(1,:) + t(2,:)*1i;
+            [r, c] = size (v);
+            v = reshape (v, c, r);
+            end
+        end
+
+        function v = write(data, filename)
+
+            % usage: write(data, filename)
+            %
+            %  open filename and write data to it
+            %  Format is interleaved float IQ e.g. each
+            %  I,Q 32-bit float IQIQIQ....
+            %  This is compatible with read_complex_binary()
+            %
+
+            m = nargchk (2,2,nargin);
+            if (m)
+            usage (m);
+            end
+
+            f = fopen (filename, 'wb');
+            if (f < 0)
+            v = 0;
+            else
+            re = real(data);
+            im = imag(data);
+            re = re(:)';
+            im = im(:)';
+            y = [re;im];
+            y = y(:);
+            v = fwrite (f, y, 'float');
+            fclose (f);
+            end
         end
     end
 end

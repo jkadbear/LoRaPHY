@@ -3,6 +3,8 @@
 **LoRaPHY** is a complete MATLAB implementation of [LoRa](https://en.wikipedia.org/wiki/LoRa) physical layer, including baseband modulation, baseband demodulation, encoding and decoding.
 **LoRaPHY** is organized as a single file `LoRaPHY.m` for ease of use (copy it and run everywhere).
 
+The real-time SDR implementation based on GNU Radio can be accessed via [gr-lora](https://github.com/jkadbear/gr-lora).
+
 ## Components
 
 - LoRa Modulator
