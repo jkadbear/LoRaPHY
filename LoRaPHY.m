@@ -893,6 +893,20 @@ classdef LoRaPHY < handle & matlab.mixin.Copyable
                 fprintf("\n");
             end
         end
+
+        function plot_peak(self, x)
+            figure;
+            c = [self.downchirp self.upchirp];
+            for jj = 1:9
+                for ii = 1:2
+                    ft = fft(self.sig(x:x+self.sample_num-1).*c(:,ii), self.fft_len);
+                    ft_ = abs(ft(1:self.bin_num)) + abs(ft(self.fft_len-self.bin_num+1:self.fft_len));
+                    subplot(2, 9, (ii-1)*9+jj);
+                    plot(ft_);
+                end
+                x = x + self.sample_num;
+            end
+        end
     end
 
     methods(Static)
