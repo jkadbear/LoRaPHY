@@ -27,7 +27,7 @@ MATLAB >= R2019b
 
 ## Usage
 
-Git clone this repo or just download `LoRaPHY.m`.
+Git clone this repo or just download [`LoRaPHY.m`](https://raw.githubusercontent.com/jkadbear/LoRaPHY/master/LoRaPHY.m).
 Put your MATLAB script, e.g., `test.m`, in the same directory of `LoRaPHY.m`.
 Below is an example showing how to generate a valid baseband LoRa signal and then extract the data with the decoder.
 See more examples in directory [examples](./examples).
