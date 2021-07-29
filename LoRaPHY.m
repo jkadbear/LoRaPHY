@@ -3,7 +3,7 @@
 %
 % \brief     Physical Layer LoRa Modulator/Demodulator/Encoder/Decoder
 %
-% \version   0.1.0
+% \version   0.1.1
 %
 % \repo      https://github.com/jkadbear/LoRaPHY
 %
@@ -12,7 +12,7 @@
 % \author    jkadbear
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-classdef LoRaPHY < handle
+classdef LoRaPHY < handle & matlab.mixin.Copyable
     %LORAPHY LoRa physical layer reverse engineering
     %%% Example %%%
     % rf_freq = 470e6;
@@ -58,6 +58,14 @@ classdef LoRaPHY < handle
     methods
         function self = LoRaPHY(rf_freq, sf, bw, fs)
             %LORAPHY Construct an instance of this class
+
+            % Hexadecimal or binary values representation require at least
+            % MATLAB R2019b
+            % https://www.mathworks.com/help/matlab/matlab_prog/specify-hexadecimal-and-binary-numbers.html
+            if verLessThan('matlab', '9.7')
+                error('Error. Newer version of MATLAB is required ( >=R2019b ).');
+            end
+
             self.rf_freq = rf_freq;
             self.sf = sf;
             self.bw = bw;
@@ -188,6 +196,7 @@ classdef LoRaPHY < handle
             %            results. Each element represents the CFO of the
             %            packet in symbols_m.
 
+            self.cfo = 0;
             self.init();
 
             % resample signal with 2*bandwidth

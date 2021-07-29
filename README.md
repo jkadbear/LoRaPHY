@@ -5,6 +5,9 @@
 
 The real-time SDR implementation based on GNU Radio can be accessed via [gr-lora](https://github.com/jkadbear/gr-lora).
 
+## Requirements
+MATLAB >= R2019b
+
 ## Components
 
 - LoRa Modulator
