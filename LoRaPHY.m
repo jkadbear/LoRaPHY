@@ -562,7 +562,7 @@ classdef LoRaPHY < handle & matlab.mixin.Copyable
             % up-down alignment
             % NOTE preamble_len >= 6
             % NOTE there are two NETID chirps between preamble and SFD
-            x_u = x - 4*self.sample_num;
+            x_u = x - 6*self.sample_num;
             pku = self.dechirp(x_u);
             % first shift the up peak to position 0
             % current sampling frequency = 2 * bandwidth
