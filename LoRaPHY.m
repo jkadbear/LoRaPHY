@@ -3,7 +3,7 @@
 %
 % \brief     Physical Layer LoRa Modulator/Demodulator/Encoder/Decoder
 %
-% \version   0.1.1
+% \version   0.1.2
 %
 % \repo      https://github.com/jkadbear/LoRaPHY
 %
@@ -161,7 +161,9 @@ classdef LoRaPHY < handle & matlab.mixin.Copyable
                 % search preamble_len-1 basic upchirps
                 if length(pk_bin_list) == self.preamble_len - 1
                     % preamble detected
-                    x = ii;
+                    % coarse alignment: first shift the up peak to position 0
+                    % current sampling frequency = 2 * bandwidth
+                    x = ii - round((pk_bin_list(end)-1)/self.zero_padding_ratio*2);
                     return;
                 end
                 pk0 = self.dechirp(ii);
@@ -559,15 +561,10 @@ classdef LoRaPHY < handle & matlab.mixin.Copyable
                 return;
             end
 
-            % up-down alignment
+            % Up-Down Alignment
             % NOTE preamble_len >= 6
             % NOTE there are two NETID chirps between preamble and SFD
-            x_u = x - 6*self.sample_num;
-            pku = self.dechirp(x_u);
-            % first shift the up peak to position 0
-            % current sampling frequency = 2 * bandwidth
-            x = x - round((pku(2)-1)/self.zero_padding_ratio*2);
-
+            % NOTE `detect` has already shifted the up peak to position 0
             pkd = self.dechirp(x, false);
             if pkd(2) > self.bin_num / 2
                 to = round((pkd(2)-1-self.bin_num)/self.zero_padding_ratio);
