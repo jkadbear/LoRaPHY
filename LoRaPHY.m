@@ -202,6 +202,7 @@ classdef LoRaPHY < handle & matlab.mixin.Copyable
             self.init();
 
             % resample signal with 2*bandwidth
+            sig = lowpass(sig, self.bw/2, self.fs);
             self.sig = resample(sig, 2*self.bw, self.fs);
 
             symbols_m = [];
