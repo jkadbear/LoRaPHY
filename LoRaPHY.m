@@ -579,9 +579,9 @@ classdef LoRaPHY < handle & matlab.mixin.Copyable
             self.preamble_bin = pku(2);
 
             if self.preamble_bin > self.bin_num / 2
-                self.cfo = (self.preamble_bin-self.bin_num)*self.bw/self.bin_num;
+                self.cfo = (self.preamble_bin-self.bin_num-1)*self.bw/self.bin_num;
             else
-                self.cfo = self.preamble_bin*self.bw/self.bin_num;
+                self.cfo = (self.preamble_bin-1)*self.bw/self.bin_num;
             end
 
             % set x to the start of data symbols
