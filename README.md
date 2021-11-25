@@ -73,8 +73,12 @@ disp(checksum);
 
 ## References
 
-1. Zhenqiang Xu, Pengjin Xie, Jiliang Wang. Pyramid: Real-Time LoRa Collision Decoding with Peak Tracking. In Proceedings of IEEE INFOCOM. 2021.
+1. Zhenqiang Xu, Pengjin Xie, Jiliang Wang. Pyramid: Real-Time LoRa Collision Decoding with Peak Tracking. In Proceedings of IEEE INFOCOM. 2021: 1-9.
 2. Zhenqiang Xu, Shuai Tong, Pengjin Xie, Jiliang Wang. FlipLoRa: Resolving Collisions with Up-Down Quasi-Orthogonality. In Proceedings of IEEE SECON. 2020: 1-9.
 3. Shuai Tong, Zhenqiang Xu, Jiliang Wang. CoLoRa: Enabling Multi-Packet Reception in LoRa. In Proceedings of IEEE INFOCOM. 2020: 2303-2311.
 4. Shuai Tong, Jiliang Wang, Yunhao Liu. Combating packet collisions using non-stationary signal scaling in LPWANs. In Proceedings of Proceedings of ACM MobiSys. 2020: 234-246.
 5. Yinghui Li, Jing Yang, Jiliang Wang. DyLoRa: Towards Energy Efficient Dynamic LoRa Transmission Control. In Proceedings of IEEE INFOCOM. 2020: 2312-2320.
+6. Qian Chen, Jiliang Wang. AlignTrack: Push the Limit of LoRa Collision Decoding. In Proceedings of IEEE ICNP. 2021.
+7. Jinyan Jiang, Zhenqiang Xu, Jiliang Wang. Long-Range Ambient LoRa Backscatter with Parallel Decoding. In Proceedings of ACM MobiCom. 2021.
+8. Shuai Tong, Zilin Shen, Yunhao Liu, Jiliang Wang. Combating Link Dynamics for Reliable LoRa Connection in Urban Settings. In Proceedings of ACM MobiCom. 2021.
+9. Chenning Li, Hanqing Guo, Shuai Tong, Xiao Zeng, Zhichao Cao, Mi Zhang, Qiben Yan, Li Xiao, Jiliang Wang, Yunhao Liu. NELoRa: Towards Ultra-low SNR LoRa Communication with Neural-enhanced Demodulation. In Proceedings of ACM SenSys. 2021.
