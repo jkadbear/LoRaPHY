@@ -1,3 +1,4 @@
+addpath('..');
 % load complex signal from file
 sig = LoRaPHY.read("./sig.cfile");
 

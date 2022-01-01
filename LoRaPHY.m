@@ -3,11 +3,11 @@
 %
 % \brief     Physical Layer LoRa Modulator/Demodulator/Encoder/Decoder
 %
-% \version   0.1.2
+% \version   0.2.0
 %
 % \repo      https://github.com/jkadbear/LoRaPHY
 %
-% \copyright MIT License, 2020-2021
+% \copyright MIT License, 2020-2022
 %
 % \author    jkadbear
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -51,6 +51,7 @@ classdef LoRaPHY < handle & matlab.mixin.Copyable
         preamble_bin              % reference bin in current decoding window, used to eliminate CFO
         cfo                       % carrier crequency offset
 
+        fast_mode                 % set `true` for fast execution (ignore low-pass filter)
         is_debug                  % set `true` for debug information
         hamming_decoding_en       % enable hamming decoding
     end
@@ -72,6 +73,7 @@ classdef LoRaPHY < handle & matlab.mixin.Copyable
             self.fs = fs;
             self.has_header = 1;
             self.crc = 1;
+            self.fast_mode = false;
             self.is_debug = false;
             self.hamming_decoding_en = true;
             self.zero_padding_ratio = 10;
@@ -185,7 +187,7 @@ classdef LoRaPHY < handle & matlab.mixin.Copyable
             x = -1;
         end
 
-        function [symbols_m, cfo_m] = demodulate(self, sig)
+        function [symbols_m, cfo_m, netid_m] = demodulate(self, sig)
             % demodulate  LoRa packet demodulation
             %
             % input:
@@ -201,12 +203,15 @@ classdef LoRaPHY < handle & matlab.mixin.Copyable
             self.cfo = 0;
             self.init();
 
+            if ~self.fast_mode
+                sig = lowpass(sig, self.bw/2, self.fs);
+            end
             % resample signal with 2*bandwidth
-            sig = lowpass(sig, self.bw/2, self.fs);
             self.sig = resample(sig, 2*self.bw, self.fs);
 
             symbols_m = [];
             cfo_m = [];
+            netid_m = [];
             x = 1;
             while x < length(self.sig)
                 x = self.detect(x);
@@ -216,6 +221,14 @@ classdef LoRaPHY < handle & matlab.mixin.Copyable
 
                 % align symbols with SFD
                 x = self.sync(x);
+
+                % NetID
+                pk_netid1 = self.dechirp(round(x-4.25*self.sample_num));
+                pk_netid2 = self.dechirp(round(x-3.25*self.sample_num));
+                netid_m = [netid_m;
+                    [mod((pk_netid1(2)+self.bin_num-self.preamble_bin)/self.zero_padding_ratio, 2^self.sf), ...
+                    mod((pk_netid2(2)+self.bin_num-self.preamble_bin)/self.zero_padding_ratio, 2^self.sf)]
+                ];
 
                 % the goal is to extract payload_len from PHY header
                 % header is in the first 8 symbols

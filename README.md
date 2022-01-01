@@ -31,6 +31,7 @@ Git clone this repo or just download [`LoRaPHY.m`](https://raw.githubusercontent
 Put your MATLAB script, e.g., `test.m`, in the same directory of `LoRaPHY.m`.
 Below is an example showing how to generate a valid baseband LoRa signal and then extract the data with the decoder.
 See more examples in directory [examples](./examples).
+(LoRaPHY provides `fast mode` which enables 10x speedup comparing to normal demodulation with a little performance degradation. See `./examples/test_fast_mode.m`.)
 
 ```matlab
 % test.m
@@ -55,7 +56,7 @@ disp(symbols);
 sig = phy.modulate(symbols);
 
 % Demodulation
-[symbols_d, cfo] = phy.demodulate(sig);
+[symbols_d, cfo, netid] = phy.demodulate(sig);
 fprintf("[demodulate] symbols:\n");
 disp(symbols_d);
 
