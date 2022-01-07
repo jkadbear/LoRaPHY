@@ -3,7 +3,7 @@
 %
 % \brief     Physical Layer LoRa Modulator/Demodulator/Encoder/Decoder
 %
-% \version   0.2.0
+% \version   0.2.1
 %
 % \repo      https://github.com/jkadbear/LoRaPHY
 %
@@ -411,11 +411,20 @@ classdef LoRaPHY < handle & matlab.mixin.Copyable
             % output:
             %     checksum: CRC result
 
-            input = data(1:end-2);
-            seq = self.crc_generator(reshape(logical(de2bi(input, 8, 'left-msb'))', [], 1));
-            checksum_b1 = bitxor(bi2de(seq(end-7:end)', 'left-msb'), data(end));
-            checksum_b2 = bitxor(bi2de(seq(end-15:end-8)', 'left-msb'), data(end-1));
-            checksum = [checksum_b1; checksum_b2];
+            switch length(data)
+                case 0
+                    checksum = [0; 0];
+                case 1
+                    checksum = [data(end); 0];
+                case 2
+                    checksum = [data(end); data(end-1)];
+                otherwise
+                    input = data(1:end-2);
+                    seq = self.crc_generator(reshape(logical(de2bi(input, 8, 'left-msb'))', [], 1));
+                    checksum_b1 = bitxor(bi2de(seq(end-7:end)', 'left-msb'), data(end));
+                    checksum_b2 = bitxor(bi2de(seq(end-15:end-8)', 'left-msb'), data(end-1));
+                    checksum = [checksum_b1; checksum_b2];
+            end
         end
 
         function data_w = whiten(self, data)
