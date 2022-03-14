@@ -878,8 +878,8 @@ classdef LoRaPHY < handle & matlab.mixin.Copyable
             time_ms = (sym_num + 4.25 + self.preamble_len) * (2^self.sf/self.bw) * 1000;
         end
 
-        function print_bin(ld, flag, vec, size)
-            if ld.is_debug
+        function print_bin(self, flag, vec, size)
+            if self.is_debug
                 if nargin == 3
                     size = 8;
                 end
@@ -892,8 +892,8 @@ classdef LoRaPHY < handle & matlab.mixin.Copyable
             end
         end
 
-        function print_hex(ld, flag, vec)
-            if ld.is_debug
+        function print_hex(self, flag, vec)
+            if self.is_debug
                 len = length(vec);
                 fprintf("%s: ", flag);
                 for i = 1:len
@@ -903,8 +903,8 @@ classdef LoRaPHY < handle & matlab.mixin.Copyable
             end
         end
 
-        function log(ld, flag, data)
-            if ld.is_debug
+        function log(self, flag, data)
+            if self.is_debug
                 fprintf("%s: ", flag);
                 len = length(data);
                 for i = 1:len
