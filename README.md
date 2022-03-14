@@ -36,10 +36,10 @@ See more examples in directory [examples](./examples).
 ```matlab
 % test.m
 
-rf_freq = 470e6;    % carrier frequency, used to correct clock drift
-sf = 7;             % spreading factor
-bw = 125e3;         % bandwidth
-fs = 1e6;           % sampling rate
+rf_freq = 470e6;    % carrier frequency 470 MHz, used to correct clock drift
+sf = 7;             % spreading factor SF7
+bw = 125e3;         % bandwidth 125 kHz
+fs = 1e6;           % sampling rate 1 MHz
 
 phy = LoRaPHY(rf_freq, sf, bw, fs);
 phy.has_header = 1;         % explicit header mode
