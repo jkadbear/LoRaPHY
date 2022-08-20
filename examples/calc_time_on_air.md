@@ -1,4 +1,4 @@
-# Calculate the flying time of a LoRa packet
+# Calculating the flying time of a LoRa packet
 
 ```matlab
 rf_freq = 470e6;    % carrier frequency
