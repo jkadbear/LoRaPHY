@@ -49,7 +49,7 @@ classdef LoRaPHY < handle & matlab.mixin.Copyable
         zero_padding_ratio        % FFT zero padding ratio
         fft_len                   % FFT size
         preamble_bin              % reference bin in current decoding window, used to eliminate CFO
-        cfo                       % carrier crequency offset
+        cfo                       % carrier frequency offset
 
         fast_mode                 % set `true` for fast execution (ignore low-pass filter)
         is_debug                  % set `true` for debug information
