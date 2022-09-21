@@ -31,7 +31,7 @@ classdef LoRaPHY < handle & matlab.mixin.Copyable
         sf                        % spreading factor (7,8,9,10,11,12)
         bw                        % bandwidth (125kHz 250kHz 500kHz)
         fs                        % sampling frequency
-        cr                        % code rate: (1:4/5 2:4/5 3:4/7 4:4/8)
+        cr                        % code rate: (1:4/5 2:4/6 3:4/7 4:4/8)
         payload_len               % payload length
         has_header                % explicit header: 1, implicit header: 0
         crc                       % crc = 1 if CRC Check is enabled else 0
