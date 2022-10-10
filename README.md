@@ -3,6 +3,9 @@
 **LoRaPHY** is a complete MATLAB implementation of [LoRa](https://en.wikipedia.org/wiki/LoRa) physical layer, including baseband modulation, baseband demodulation, encoding and decoding.
 **LoRaPHY** is organized as a single file `LoRaPHY.m` for ease of use (copy it and run everywhere).
 
+This repo is the implementation of the following paper:
+> Zhenqiang Xu, Pengjin Xie, Shuai Tong, Jiliang Wang. From Demodulation to Decoding: Towards Complete LoRa PHY Understanding and Implementation. ACM Transactions on Sensor Networks 2022. [[pdf]](https://dl.acm.org/doi/10.1145/3546869)
+
 The real-time SDR implementation based on GNU Radio can be accessed via [gr-lora](https://github.com/jkadbear/gr-lora).
 
 ## Prerequisites
@@ -31,7 +34,7 @@ Git clone this repo or just download [`LoRaPHY.m`](https://raw.githubusercontent
 Put your MATLAB script, e.g., `test.m`, in the same directory of `LoRaPHY.m`.
 Below is an example showing how to generate a valid baseband LoRa signal and then extract the data with the decoder.
 See more examples in directory [examples](./examples).
-(LoRaPHY provides `fast mode` which enables 10x speedup comparing to normal demodulation with a little performance degradation. See `./examples/test_fast_mode.m`.)
+(LoRaPHY provides `fast mode` which enables 10x speedup comparing to normal demodulation with a little sensitivity degradation. See `./examples/test_fast_mode.m`.)
 
 ```matlab
 % test.m
