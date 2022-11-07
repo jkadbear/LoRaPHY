@@ -13,7 +13,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 classdef LoRaPHY < handle & matlab.mixin.Copyable
-    %LORAPHY LoRa physical layer reverse engineering
+    %LORAPHY LoRa physical layer implementation
     %%% Example %%%
     % rf_freq = 470e6;
     % sf = 12;
